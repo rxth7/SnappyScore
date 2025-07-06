@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Block Puzzle Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+            font-family: 'Orbitron', Arial, sans-serif;
+            color: #fff;
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            width: 400px;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 8px #0008;
+        }
+        
+        .game-board {
+            background: #222;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px #000a;
+            display: grid;
+            grid-template-columns: repeat(10, 36px);
+            grid-template-rows: repeat(10, 36px);
+            gap: 4px;
+            padding: 16px;
+            margin-bottom: 32px;
+            position: relative;
+        }
+        
+        .cell {
+            width: 36px;
+            height: 36px;
+            background: #333;
+            border-radius: 8px;
+            transition: background 0.2s;
+            box-shadow: 0 2px 8px #0004;
+            position: relative;
+            z-index: 1;
+            /* Base z-index for board cells */
+        }
+        
+        .cell.filled {
+            background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+            box-shadow: 0 0 16px #8f94fb88;
+            animation: popIn 0.2s;
+        }
+        
+        @keyframes popIn {
+            0% {
+                transform: scale(0.7);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .shapes-bar {
+            display: flex;
+            gap: 32px;
+            margin-bottom: 16px;
+            min-height: 90px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .shape {
+            cursor: grab;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #0004;
+            transition: transform 0.2s;
+            position: relative;
+            padding: 5px;
+            /* Add some padding around the actual shape */
+        }
+        
+        .shape.dragging {
+            opacity: 0.7;
+            transform: scale(1.1);
+            /* MODIFIED: Removed rotate(-5deg) */
+            z-index: 1000;
+            /* Ensure dragging shape is on top */
+            pointer-events: none;
+            /* Allow interaction with elements below */
+        }
+        /* The actual shape grid */
+        
+        .shape-grid-container {
+            display: grid;
+            gap: 2px;
+            /* Smaller gap for shape cells */
+        }
+        
+        .shape-cell {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px #0003;
+            /* background will be set by JS */
+        }
+        /* Highlighting for valid/invalid placement */
+        
+        .cell.highlight-valid {
+            background: rgba(143, 148, 251, 0.6);
+            /* Lighter blue for valid */
+            box-shadow: 0 0 10px rgba(143, 148, 251, 0.8);
+            z-index: 999;
+            /* Ensure highlight is below the dragging shape (1000) but above regular cells (1) */
+        }
+        
+        .cell.highlight-invalid {
+            background: rgba(255, 0, 0, 0.4);
+            /* Red for invalid */
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.6);
+            z-index: 999;
+            /* Ensure highlight is below the dragging shape (1000) but above regular cells (1) */
+        }
+        
+        .blast {
+            animation: blast 0.5s forwards;
+            background: radial-gradient(circle, #fff 60%, #ff3 100%);
+            box-shadow: 0 0 32px #fffa;
+        }
+        
+        @keyframes blast {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(0);
+            }
+        }
+        
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: rgba(30, 30, 40, 0.98);
+            color: #fff;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px #000a;
+            padding: 40px 60px;
+            text-align: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            font-size: 2rem;
+            letter-spacing: 2px;
+        }
+        
+        .popup.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
+            animation: popupBounce 0.5s;
+        }
+        
+        @keyframes popupBounce {
+            0% {
+                transform: translate(-50%, -50%) scale(0.7);
+            }
+            60% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        
+        .popup .btn {
+            margin-top: 24px;
+            padding: 12px 32px;
+            background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 2px 8px #0004;
+            transition: background 0.2s;
+        }
+        
+        .popup .btn:hover {
+            background: linear-gradient(90deg, #8f94fb 0%, #4e54c8 100%);
+        }
+        
+        .music-btn {
+            position: fixed;
+            top: 24px;
+            right: 32px;
+            background: #232526;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            box-shadow: 0 2px 8px #0004;
+            cursor: pointer;
+            color: #fff;
+            font-size: 1.6rem;
+            z-index: 10000;
+            transition: background 0.2s;
+        }
+        
+        .music-btn.active {
+            background: #8f94fb;
+            color: #232526;
+        }
+        
+        @media (max-width: 600px) {
+            .game-board {
+                grid-template-columns: repeat(10, 24px);
+                grid-template-rows: repeat(10, 24px);
+                padding: 6px;
+            }
+            .scoreboard {
+                width: 90vw;
+                font-size: 1.1rem;
+            }
+            .shapes-bar {
+                gap: 12px;
+            }
+            .shape-cell {
+                width: 16px;
+                /* Smaller cells for mobile shapes */
+                height: 16px;
+            }
+            .popup {
+                padding: 24px 10vw;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="music-btn" id="musicBtn" title="Toggle Music">🎵</button>
+    <div class="container">
+        <div class="scoreboard">
+            <div>Score: <span id="score">0</span></div>
+            <div>High Score: <span id="highScore">0</span></div>
+        </div>
+        <div class="game-board" id="gameBoard"></div>
+        <div class="shapes-bar" id="shapesBar"></div>
+    </div>
+    <div class="popup" id="popup">
+        <div id="popupMsg"></div>
+        <button class="btn" id="popupBtn">Retry</button>
+    </div>
+    <audio id="bgMusic" src="https://cdn.pixabay.com/audio/2022/10/16/audio_12b5b7b7a7.mp3" loop></audio>
+    <audio id="popSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b6b7b.mp3"></audio>
+    <audio id="blastSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b6b7b.mp3"></audio>
+    <audio id="highScoreSound" src="https://cdn.pixabay.com/audio/2022/10/16/audio_12b5b7b7a7.mp3"></audio>
+    <audio id="retrySound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b6b7b.mp3"></audio>
+    <script>
+        // --- Game Constants ---
+        const BOARD_SIZE = 10;
+        const SHAPES_PER_ROUND = 4;
+        const SHAPE_CELL_SIZE_PX = 24; // This is the fixed size of a single cell within a shape
+        const BOARD_CELL_SIZE_PX = 36; // This is the fixed size of a single cell on the board
+        const SHAPE_CONTAINER_PADDING = 5; // From .shape { padding: 5px; }
+
+        const SHAPE_COLORS = [
+            'linear-gradient(135deg, #ffb347 0%, #ffcc33 100%)',
+            'linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%)',
+            'linear-gradient(135deg, #43cea2 0%, #185a9d 100%)',
+            'linear-gradient(135deg, #ff512f 0%, #dd2476 100%)',
+            'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)'
+        ];
+
+        // --- Shape Definitions (actual shape dimensions) ---
+        const SHAPE_TEMPLATES = [
+            // Single block
+            [
+                [1]
+            ],
+            // 2x1
+            [
+                [1, 1]
+            ],
+            // 1x2
+            [
+                [1],
+                [1]
+            ],
+            // 3x1
+            [
+                [1, 1, 1]
+            ],
+            // 1x3
+            [
+                [1],
+                [1],
+                [1]
+            ],
+            // 2x2
+            [
+                [1, 1],
+                [1, 1]
+            ],
+            // L
+            [
+                [1, 0],
+                [1, 0],
+                [1, 1]
+            ],
+            // T
+            [
+                [1, 1, 1],
+                [0, 1, 0]
+            ],
+            // S
+            [
+                [0, 1, 1],
+                [1, 1, 0]
+            ],
+            // Z
+            [
+                [1, 1, 0],
+                [0, 1, 1]
+            ],
+            // 3x3
+            [
+                [1, 1, 1],
+                [1, 1, 1],
+                [1, 1, 1]
+            ],
+            // 4x1
+            [
+                [1, 1, 1, 1]
+            ],
+            // 1x4
+            [
+                [1],
+                [1],
+                [1],
+                [1]
+            ],
+            // L mirrored
+            [
+                [0, 1],
+                [0, 1],
+                [1, 1]
+            ],
+            // T mirrored
+            [
+                [0, 1, 0],
+                [1, 1, 1]
+            ],
+            // 5x1
+            [
+                [1, 1, 1, 1, 1]
+            ],
+            // 1x5
+            [
+                [1],
+                [1],
+                [1],
+                [1],
+                [1]
+            ]
+        ];
+        // --- State ---
+        let board = [];
+        let shapes = [];
+        let draggingShape = null; // The shape data object
+        let draggingOffset = {
+            x: 0,
+            y: 0
+        }; // Offset from mouse to top-left of the visual shape div
+        let draggingElem = null; // The DOM element being dragged (the .shape div)
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('blockPuzzleHighScore') || '0');
+        let isGameOver = false;
+
+        // --- DOM ---
+        const gameBoard = document.getElementById('gameBoard');
+        const shapesBar = document.getElementById('shapesBar');
+        const scoreEl = document.getElementById('score');
+        const highScoreEl = document.getElementById('highScore');
+        const popup = document.getElementById('popup');
+        const popupMsg = document.getElementById('popupMsg');
+        const popupBtn = document.getElementById('popupBtn');
+        const musicBtn = document.getElementById('musicBtn');
+
+        // --- Sounds ---
+        const bgMusic = document.getElementById('bgMusic');
+        const popSound = document.getElementById('popSound');
+        const blastSound = document.getElementById('blastSound');
+        const highScoreSound = document.getElementById('highScoreSound');
+        const retrySound = document.getElementById('retrySound');
+
+        // --- Utility ---
+        function playSound(audio) {
+            audio.currentTime = 0;
+            audio.play();
+        }
+
+        function playMusic() {
+            bgMusic.volume = 0.3;
+            bgMusic.play();
+            musicBtn.classList.add('active');
+        }
+
+        function pauseMusic() {
+            bgMusic.pause();
+            musicBtn.classList.remove('active');
+        }
+
+        // --- Board Rendering ---
+        function renderBoard() {
+            gameBoard.innerHTML = '';
+            for (let y = 0; y < BOARD_SIZE; y++) {
+                for (let x = 0; x < BOARD_SIZE; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell' + (board[y][x] ? ' filled' : '');
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    gameBoard.appendChild(cell);
+                }
+            }
+        }
+
+        // --- Shape Rendering ---
+        function renderShapes() {
+            shapesBar.innerHTML = '';
+            shapes.forEach((shape, idx) => {
+                const shapeDiv = document.createElement('div');
+                shapeDiv.className = 'shape';
+                shapeDiv.draggable = true; // Still mark as draggable for event listeners
+                shapeDiv.dataset.idx = idx;
+
+                const shapeGridContainer = document.createElement('div');
+                shapeGridContainer.className = 'shape-grid-container';
+                // Set grid dimensions based on the actual shape's size
+                shapeGridContainer.style.gridTemplateColumns = `repeat(${shape.grid[0].length}, ${SHAPE_CELL_SIZE_PX}px)`;
+                shapeGridContainer.style.gridTemplateRows = `repeat(${shape.grid.length}, ${SHAPE_CELL_SIZE_PX}px)`;
+
+                for (let y = 0; y < shape.grid.length; y++) {
+                    for (let x = 0; x < shape.grid[y].length; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'shape-cell';
+                        if (shape.grid[y][x]) {
+                            cell.style.background = shape.color;
+                        } else {
+                            // Transparent cells in the shape representation
+                            cell.style.background = 'transparent';
+                        }
+                        shapeGridContainer.appendChild(cell);
+                    }
+                }
+                shapeDiv.appendChild(shapeGridContainer);
+
+                // Drag events
+                shapeDiv.addEventListener('mousedown', e => startDrag(e, idx));
+                shapeDiv.addEventListener('touchstart', e => startDrag(e, idx), {
+                    passive: false
+                });
+                shapesBar.appendChild(shapeDiv);
+            });
+        }
+
+        // --- Shape Generation ---
+        function randomShape() {
+            const template = SHAPE_TEMPLATES[Math.floor(Math.random() * SHAPE_TEMPLATES.length)];
+            const shape = {
+                grid: template,
+                color: SHAPE_COLORS[Math.floor(Math.random() * SHAPE_COLORS.length)],
+                minX: Infinity, // Min X of a filled cell in the shape's grid
+                minY: Infinity, // Min Y of a filled cell in the shape's grid
+                maxX: -Infinity, // Max X of a filled cell in the shape's grid
+                maxY: -Infinity // Max Y of a filled cell in the shape's grid
+            };
+
+            // Calculate the actual bounding box of filled cells for the shape
+            // This is used for 'canPlaceAnyShape' to ensure we only check relevant starting points.
+            for (let y = 0; y < shape.grid.length; y++) {
+                for (let x = 0; x < shape.grid[y].length; x++) {
+                    if (shape.grid[y][x]) {
+                        if (x < shape.minX) shape.minX = x;
+                        if (y < shape.minY) shape.minY = y;
+                        if (x > shape.maxX) shape.maxX = x;
+                        if (y > shape.maxY) shape.maxY = y;
+                    }
+                }
+            }
+
+            // If the shape is completely empty (shouldn't happen with current templates)
+            // or a single cell at 0,0, ensure minX/Y are 0.
+            if (shape.minX === Infinity) {
+                shape.minX = 0;
+                shape.minY = 0;
+                shape.maxX = 0;
+                shape.maxY = 0;
+            }
+
+            return shape;
+        }
+
+        function generateShapes() {
+            shapes = [];
+            for (let i = 0; i < SHAPES_PER_ROUND; i++) {
+                shapes.push(randomShape());
+            }
+        }
+
+        // --- Drag & Drop ---
+        function startDrag(e, shapeIdx) {
+            if (isGameOver) return;
+            e.preventDefault();
+
+            draggingShape = shapes[shapeIdx];
+            draggingElem = e.currentTarget; // This is the .shape div
+            draggingElem.classList.add('dragging');
+
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            // Calculate the offset from the mouse pointer to the top-left of the draggingElem.
+            // This offset is used to position the draggingElem accurately under the mouse.
+            const rect = draggingElem.getBoundingClientRect();
+            draggingOffset.x = clientX - rect.left;
+            draggingOffset.y = clientY - rect.top;
+
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+            document.addEventListener('touchmove', onDragMove, {
+                passive: false
+            });
+            document.addEventListener('touchend', onDragEnd);
+        }
+
+        function onDragMove(e) {
+            e.preventDefault();
+            if (!draggingElem) return;
+
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            // Position the entire dragging element (the .shape div)
+            // Adjust the position based on the draggingOffset to align the mouse with the original drag point
+            draggingElem.style.position = 'fixed';
+            draggingElem.style.left = (clientX - draggingOffset.x) + 'px';
+            draggingElem.style.top = (clientY - draggingOffset.y) + 'px';
+            draggingElem.style.zIndex = 1000;
+
+            highlightPossiblePlacement(draggingShape, clientX, clientY);
+        }
+
+        function highlightPossiblePlacement(shape, clientX, clientY) {
+            const boardRect = gameBoard.getBoundingClientRect();
+            const cells = gameBoard.children;
+            const cellSize = BOARD_CELL_SIZE_PX;
+
+            // Clear previous highlights
+            Array.from(cells).forEach(cell => cell.classList.remove('highlight-valid', 'highlight-invalid'));
+
+            // Check if mouse is over the board
+            if (
+                clientX >= boardRect.left && clientX <= boardRect.right &&
+                clientY >= boardRect.top && clientY <= boardRect.bottom
+            ) {
+                // Calculate the top-left pixel position of the *shape's internal grid (0,0 index)* on the screen.
+                // This accounts for the draggingElem's calculated screen position and its internal padding.
+                const shapeGridActualScreenLeft = (clientX - draggingOffset.x) + SHAPE_CONTAINER_PADDING;
+                const shapeGridActualScreenTop = (clientY - draggingOffset.y) + SHAPE_CONTAINER_PADDING;
+
+                // Convert this screen pixel position to a pixel position relative to the board's top-left.
+                const shapeGridActualBoardLeft = shapeGridActualScreenLeft - boardRect.left;
+                const shapeGridActualBoardTop = shapeGridActualScreenTop - boardRect.top;
+
+                // Convert the board-relative pixel position to board cell coordinates (bx, by).
+                // This `bx, by` represents the top-left cell on the board where the shape's (0,0) internal grid cell should be placed.
+                // Using Math.round to provide a more intuitive "snap to grid" feel.
+                let bx = Math.round(shapeGridActualBoardLeft / cellSize);
+                let by = Math.round(shapeGridActualBoardTop / cellSize);
+
+                // IMPORTANT: Removed the problematic `bx = bx + shape.minX;` and `by = by + shape.minY;` lines.
+                // The `bx, by` now correctly represents the absolute board coordinates for the top-left of the shape's `grid[0][0]`.
+
+                const canPlace = canPlaceShapeAt(shape, bx, by);
+
+                // Apply highlights based on the shape's actual filled cells and the calculated (bx, by)
+                for (let y = 0; y < shape.grid.length; y++) {
+                    for (let x = 0; x < shape.grid[y].length; x++) {
+                        if (shape.grid[y][x]) { // If this cell of the shape is filled
+                            let boardX = bx + x; // Absolute X coordinate on board for this shape cell
+                            let boardY = by + y; // Absolute Y coordinate on board for this shape cell
+
+                            if (boardX >= 0 && boardY >= 0 && boardX < BOARD_SIZE && boardY < BOARD_SIZE) {
+                                const cellIndex = boardY * BOARD_SIZE + boardX;
+                                if (cells[cellIndex]) {
+                                    cells[cellIndex].classList.add(canPlace ? 'highlight-valid' : 'highlight-invalid');
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        function onDragEnd(e) {
+            if (!draggingElem) return;
+
+            // Clear any lingering highlights
+            Array.from(gameBoard.children).forEach(cell => cell.classList.remove('highlight-valid', 'highlight-invalid'));
+
+            let clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            let clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+            // Check drop on board
+            const boardRect = gameBoard.getBoundingClientRect();
+            if (
+                clientX >= boardRect.left && clientX <= boardRect.right &&
+                clientY >= boardRect.top && clientY <= boardRect.bottom
+            ) {
+                // Calculate the top-left pixel position of the *shape's internal grid (0,0 index)* on the screen.
+                const shapeGridActualScreenLeft = (clientX - draggingOffset.x) + SHAPE_CONTAINER_PADDING;
+                const shapeGridActualScreenTop = (clientY - draggingOffset.y) + SHAPE_CONTAINER_PADDING;
+
+                // Convert this screen pixel position to a pixel position relative to the board's top-left.
+                const shapeGridActualBoardLeft = shapeGridActualScreenLeft - boardRect.left;
+                const shapeGridActualBoardTop = shapeGridActualScreenTop - boardRect.top;
+
+                // Convert the board-relative pixel position to board cell coordinates (bx, by).
+                let bx = Math.round(shapeGridActualBoardLeft / BOARD_CELL_SIZE_PX);
+                let by = Math.round(shapeGridActualBoardTop / BOARD_CELL_SIZE_PX);
+
+                // IMPORTANT: Removed the problematic `bx = bx + draggingShape.minX;` and `by = by + draggingShape.minY;` lines.
+
+                if (tryPlaceShape(draggingShape, bx, by)) {
+                    // Remove shape from bar
+                    let idx = shapes.indexOf(draggingShape);
+                    if (idx !== -1) shapes.splice(idx, 1);
+                    playSound(popSound);
+                    renderBoard();
+                    renderShapes();
+                    setTimeout(checkBlast, 120);
+                    setTimeout(checkGameState, 300);
+                }
+            }
+            // Reset drag state
+            draggingElem.classList.remove('dragging');
+            draggingElem.style.position = '';
+            draggingElem.style.left = '';
+            draggingElem.style.top = '';
+            draggingElem.style.zIndex = '';
+            draggingElem.style.pointerEvents = ''; // Restore pointer events
+            draggingElem = null;
+            draggingShape = null;
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
+            document.removeEventListener('touchmove', onDragMove);
+            document.removeEventListener('touchend', onDragEnd);
+        }
+
+        // --- Place Shape ---
+        // `bx` and `by` here are the board coordinates for the shape's grid[0][0]
+        function tryPlaceShape(shape, bx, by) {
+            // Validate placement for every filled cell of the shape
+            for (let y = 0; y < shape.grid.length; y++) {
+                for (let x = 0; x < shape.grid[y].length; x++) {
+                    if (shape.grid[y][x]) { // Only check if this part of the shape is filled
+                        let px = bx + x; // Absolute X coordinate on board
+                        let py = by + y; // Absolute Y coordinate on board
+
+                        // Check if out of bounds or target cell is already filled
+                        if (px < 0 || py < 0 || px >= BOARD_SIZE || py >= BOARD_SIZE || board[py][px]) {
+                            return false; // Cannot place here
+                        }
+                    }
+                }
+            }
+
+            // If all checks pass, actually place the shape
+            for (let y = 0; y < shape.grid.length; y++) {
+                for (let x = 0; x < shape.grid[y].length; x++) {
+                    if (shape.grid[y][x]) {
+                        let px = bx + x;
+                        let py = by + y;
+                        board[py][px] = 1;
+                        score++;
+                    }
+                }
+            }
+            updateScore();
+            return true;
+        }
+
+        // --- Blast Animation ---
+        function checkBlast() {
+            let rows = [],
+                cols = [];
+            // Check rows
+            for (let y = 0; y < BOARD_SIZE; y++)
+                if (board[y].every(v => v)) rows.push(y);
+                // Check cols
+            for (let x = 0; x < BOARD_SIZE; x++)
+                if (board.every(row => row[x])) cols.push(x);
+            if (rows.length || cols.length) {
+                // Animate blast
+                for (let y of rows)
+                    for (let x = 0; x < BOARD_SIZE; x++)
+                        blastCell(x, y);
+                for (let x of cols)
+                    for (let y = 0; y < BOARD_SIZE; y++)
+                        blastCell(x, y);
+                playSound(blastSound);
+                setTimeout(() => {
+                    // Clear
+                    for (let y of rows)
+                        for (let x = 0; x < BOARD_SIZE; x++)
+                            board[y][x] = 0;
+                    for (let x of cols)
+                        for (let y = 0; y < BOARD_SIZE; y++)
+                            board[y][x] = 0;
+                    updateScore(rows.length * BOARD_SIZE + cols.length * BOARD_SIZE);
+                    renderBoard();
+                    renderShapes();
+                }, 400);
+            }
+        }
+
+        function blastCell(x, y) {
+            let idx = y * BOARD_SIZE + x;
+            let cell = gameBoard.children[idx];
+            if (cell) cell.classList.add('blast');
+            setTimeout(() => {
+                if (cell) cell.classList.remove('blast');
+            }, 400);
+        }
+        // --- Score ---
+        function updateScore(extra = 0) {
+            score += extra;
+            scoreEl.textContent = score;
+            if (score > highScore) {
+                highScore = score;
+                highScoreEl.textContent = highScore;
+            }
+        }
+        // --- Game State ---
+        function checkGameState() {
+            // If all shapes used, generate new
+            if (shapes.length === 0) {
+                setTimeout(() => {
+                    generateShapes();
+                    renderShapes();
+                }, 200);
+                return;
+            }
+            // If no possible move, game over
+            if (!canPlaceAnyShape()) {
+                setTimeout(() => {
+                    isGameOver = true;
+                    if (score > parseInt(localStorage.getItem('blockPuzzleHighScore') || '0')) {
+                        localStorage.setItem('blockPuzzleHighScore', score);
+                        showPopup('🎉 New High Score!<br>' + score, true);
+                        playSound(highScoreSound);
+                    } else {
+                        showPopup('Game Over!<br>Score: ' + score, false);
+                        playSound(retrySound);
+                    }
+                }, 400);
+            }
+        }
+
+        // Checks if any of the available shapes can be placed on the board.
+        // This function needs to consider all possible starting positions (bx, by) for each shape.
+        function canPlaceAnyShape() {
+            for (let shape of shapes) {
+                // Iterate through potential top-left board cells for the shape's *grid[0][0]* (its actual top-left in its internal grid).
+                // We need to check a range that includes partially off-board placements,
+                // as long as the *filled* parts of the shape land within the board.
+                // The iteration range goes from (negative dimensions + 1) to (BOARD_SIZE - 1)
+                for (let by = -(shape.grid.length - 1); by < BOARD_SIZE; by++) {
+                    for (let bx = -(shape.grid[0].length - 1); bx < BOARD_SIZE; bx++) {
+                        if (canPlaceShapeAt(shape, bx, by)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Checks if a given shape can be placed at board coordinates (bx, by)
+        // where (bx, by) represents the intended placement of shape.grid[0][0]
+        function canPlaceShapeAt(shape, bx, by) {
+            for (let y = 0; y < shape.grid.length; y++) {
+                for (let x = 0; x < shape.grid[y].length; x++) {
+                    if (shape.grid[y][x]) { // Only consider filled cells of the shape
+                        let px = bx + x; // Absolute X coordinate on board for this specific filled block
+                        let py = by + y; // Absolute Y coordinate on board for this specific filled block
+
+                        // Check if current shape cell falls out of board bounds OR target cell is already filled
+                        if (px < 0 || py < 0 || px >= BOARD_SIZE || py >= BOARD_SIZE || board[py][px]) {
+                            return false; // Cannot place here
+                        }
+                    }
+                }
+            }
+            return true; // All filled cells of the shape can be placed
+        }
+
+
+        // --- Popup ---
+        function showPopup(msg, isHighScore) {
+            popupMsg.innerHTML = msg;
+            popup.classList.add('active');
+            popupBtn.textContent = isHighScore ? 'Play Again' : 'Retry';
+            popupBtn.onclick = restartGame;
+        }
+
+        function hidePopup() {
+            popup.classList.remove('active');
+        }
+        // --- Restart ---
+        function restartGame() {
+            hidePopup();
+            score = 0;
+            isGameOver = false;
+            board = Array.from({
+                length: BOARD_SIZE
+            }, () => Array(BOARD_SIZE).fill(0));
+            generateShapes();
+            renderBoard();
+            renderShapes();
+            updateScore(0);
+            scoreEl.textContent = score;
+            highScoreEl.textContent = highScore;
+        }
+        // --- Music Button ---
+        musicBtn.onclick = function() {
+            if (bgMusic.paused) playMusic();
+            else pauseMusic();
+        };
+        // --- Init ---
+        function init() {
+            board = Array.from({
+                length: BOARD_SIZE
+            }, () => Array(BOARD_SIZE).fill(0));
+            generateShapes();
+            renderBoard();
+            renderShapes();
+            score = 0;
+            isGameOver = false;
+            scoreEl.textContent = score;
+            highScoreEl.textContent = highScore;
+            // Auto play music on user interaction
+            document.body.addEventListener('pointerdown', () => {
+                if (bgMusic.paused) playMusic();
+            }, {
+                once: true
+            });
+        }
+        window.onload = init;
+    </script>
+</body>
+
+</html>

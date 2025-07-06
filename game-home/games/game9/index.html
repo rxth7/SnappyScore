@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Matching Game</title>
+    <style>
+         :root {
+            /* Light Mode (default) */
+            --primary: #4a6baf;
+            --secondary: #6a8fd8;
+            --background: #f5f7fa;
+            --card-back: #e1e6ed;
+            --text: #2d3748;
+            --success: #48bb78;
+            --highlight: #f6e05e;
+            --border: #cbd5e0;
+            --button-text: #2d3748;
+            --button-bg: white;
+            --stat-bg: white;
+            --win-bg: white;
+            --card-front-bg: white;
+        }
+        /* Dark Mode */
+        
+        .dark-mode {
+            --primary: #6a8fd8;
+            --secondary: #4a6baf;
+            --background: #1a202c;
+            --card-back: #2d3748;
+            --text: #f7fafc;
+            --success: #48bb78;
+            --highlight: #f6e05e;
+            --border: #4a5568;
+            --button-text: #f7fafc;
+            --button-bg: #2d3748;
+            --stat-bg: #2d3748;
+            --win-bg: #2d3748;
+            --card-front-bg: #2d3748;
+        }
+        /* Neon Mode */
+        
+        .neon-mode {
+            --primary: #ff00ff;
+            --secondary: #00ffff;
+            --background: #0f0f1a;
+            --card-back: #1a1a2e;
+            --text: #e6f7ff;
+            --success: #00ff88;
+            --highlight: #ffff00;
+            --border: #6600ff;
+            --button-text: #e6f7ff;
+            --button-bg: #1a1a2e;
+            --stat-bg: #1a1a2e;
+            --win-bg: #1a1a2e;
+            --card-front-bg: #1a1a2e;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            transition: color 0.3s;
+        }
+        
+        .subtitle {
+            color: var(--text);
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            transition: color 0.3s;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        select,
+        button {
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            font-size: 0.95rem;
+        }
+        
+        button.primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        button.primary:hover {
+            background-color: var(--secondary);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .stat-box {
+            background-color: var(--stat-bg);
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            min-width: 100px;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .game-board {
+            display: grid;
+            gap: 10px;
+            perspective: 1000px;
+            width: fit-content;
+        }
+        
+        .card {
+            width: 80px;
+            height: 80px;
+            background-color: var(--card-back);
+            border-radius: 8px;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: all 0.5s ease;
+            position: relative;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+            background-color: var(--card-front-bg);
+        }
+        
+        .card.matched {
+            transform: rotateY(180deg);
+            background-color: var(--success);
+            cursor: default;
+        }
+        
+        .card-front,
+        .card-back {
+            position: absolute;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            border-radius: 6px;
+        }
+        
+        .card-back {
+            background-color: var(--card-back);
+            transform: rotateY(0deg);
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="%234a6baf" opacity="0.2"><path d="M50 0 L100 50 L50 100 L0 50 Z"/></svg>');
+            background-size: 50%;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        .card-front {
+            background-color: var(--card-front-bg);
+            transform: rotateY(180deg);
+            font-size: 2.5rem;
+        }
+        
+        .win-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        .win-screen.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .win-content {
+            background-color: var(--win-bg);
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s;
+        }
+        
+        .win-content h2 {
+            color: var(--primary);
+            margin-top: 0;
+            font-size: 1.8rem;
+        }
+        
+        .win-stats {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .win-stats table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        
+        .win-stats th,
+        .win-stats td {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .win-stats tr.highlight {
+            background-color: rgba(74, 107, 175, 0.1);
+            font-weight: bold;
+        }
+        
+        .win-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .match-feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--success);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        .match-feedback.show {
+            opacity: 1;
+        }
+        
+        .theme-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .theme-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .theme-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .theme-btn.light {
+            background: linear-gradient(135deg, #f5f7fa 50%, #e1e6ed 50%);
+        }
+        
+        .theme-btn.dark {
+            background: linear-gradient(135deg, #1a202c 50%, #2d3748 50%);
+        }
+        
+        .theme-btn.neon {
+            background: linear-gradient(135deg, #0f0f1a 50%, #6600ff 50%);
+        }
+        
+        .theme-btn.active {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .card {
+                width: 60px;
+                height: 60px;
+            }
+            .card-front {
+                font-size: 2rem;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            button,
+            select {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .card {
+                width: 50px;
+                height: 50px;
+            }
+            .card-front {
+                font-size: 1.5rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="theme-selector">
+        <div class="theme-btn light active" data-theme="light" title="Light Mode"></div>
+        <div class="theme-btn dark" data-theme="dark" title="Dark Mode"></div>
+        <div class="theme-btn neon" data-theme="neon" title="Neon Mode"></div>
+    </div>
+
+    <div class="header">
+        <h1>Memory Matching Game</h1>
+        <p class="subtitle">Match all pairs to win! No sign-up or download required.</p>
+    </div>
+
+    <div class="controls">
+        <select id="category-select">
+            <option value="random">Random Category</option>
+            <option value="flags">Flags</option>
+            <option value="food">Food & Drinks</option>
+            <option value="animals">Animals</option>
+            <option value="shapes">Shapes</option>
+            <option value="numbers">Numbers</option>
+            <option value="letters">Letters</option>
+            <option value="fruits">Fruits & Veggies</option>
+            <option value="clothing">Clothing</option>
+            <option value="sports">Sports</option>
+            <option value="weather">Weather</option>
+            <option value="time">Time</option>
+            <option value="transport">Transport</option>
+            <option value="travel">Travel & Places</option>
+            <option value="people">People</option>
+        </select>
+
+        <select id="size-select">
+            <option value="3x2">3x2 (Easy)</option>
+            <option value="4x3">4x3</option>
+            <option value="4x4">4x4 (Medium)</option>
+            <option value="5x4" selected>5x4</option>
+            <option value="6x5">6x5 (Hard)</option>
+            <option value="8x5">8x5</option>
+            <option value="8x6">8x6 (Expert)</option>
+        </select>
+
+        <button id="restart-btn" class="primary">Restart</button>
+        <button id="classroom-btn">Classroom Mode</button>
+    </div>
+
+    <div class="stats">
+        <div class="stat-box">Time: <span id="time">00:00</span></div>
+        <div class="stat-box">Moves: <span id="moves">0</span></div>
+    </div>
+
+    <div class="game-container">
+        <div class="game-board" id="game-board"></div>
+    </div>
+
+    <div class="match-feedback" id="match-feedback">✓ Match!</div>
+
+    <div class="win-screen" id="win-screen">
+        <div class="win-content modern-win-content">
+            <div class="modern-win-bg-corner modern-win-bg-corner-top"></div>
+            <div class="modern-win-bg-corner modern-win-bg-corner-bottom"></div>
+            <div style="position: relative; z-index: 1;">
+                <svg width="60" height="60" viewBox="0 0 60 60" style="margin-bottom: 10px;">
+            <defs>
+            <linearGradient id="trophy-gradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#FFD700"/>
+                <stop offset="100%" stop-color="#FFB300"/>
+            </linearGradient>
+            </defs>
+            <g>
+            <circle cx="30" cy="30" r="28" fill="url(#trophy-gradient)" opacity="0.15"/>
+            <path d="M20 45h20v3a5 5 0 0 1-5 5h-10a5 5 0 0 1-5-5v-3z" fill="#fff8dc"/>
+            <rect x="25" y="38" width="10" height="7" rx="3" fill="#fff8dc"/>
+            <path d="M15 15a15 15 0 0 0 30 0v-5H15v5z" fill="url(#trophy-gradient)" stroke="#FFD700" stroke-width="2"/>
+            <ellipse cx="30" cy="15" rx="15" ry="8" fill="#fffde4" opacity="0.7"/>
+            <path d="M15 15c-3 0-5 4-5 8s2 8 5 8" fill="none" stroke="#FFD700" stroke-width="2"/>
+            <path d="M45 15c3 0 5 4 5 8s-2 8-5 8" fill="none" stroke="#FFD700" stroke-width="2"/>
+            </g>
+            </svg>
+                <h2 class="modern-win-title">Congratulations!</h2>
+                <p class="modern-win-desc">You matched all pairs on <span style="font-weight:600;" id="board-size">5x4</span>!</p>
+                <div class="win-stats modern-win-stats">
+                    <div style="display: flex; justify-content: center; gap: 24px;">
+                        <div class="modern-win-statbox">
+                            <div class="modern-win-label">Moves</div>
+                            <div id="win-moves" class="modern-win-value">30</div>
+                        </div>
+                        <div class="modern-win-statbox">
+                            <div class="modern-win-label">Time</div>
+                            <div id="win-time" class="modern-win-value modern-win-time">00:50</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span class="modern-win-topscores">Top Scores for this board:</span>
+                    <table class="modern-win-table">
+                        <thead>
+                            <tr>
+                                <th>Moves</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="win-rankings">
+                            <tr>
+                                <td>18</td>
+                                <td>00:40</td>
+                            </tr>
+                            <tr>
+                                <td>21</td>
+                                <td>01:38</td>
+                            </tr>
+                            <tr class="highlight">
+                                <td id="win-moves-table">30</td>
+                                <td id="win-time-table">00:50</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="win-buttons" style="margin-top: 22px;">
+                    <button id="retry-btn" class="primary modern-win-btn">Play Again</button>
+                    <button id="play-next-btn" class="modern-win-btn modern-win-btn-alt">New Board</button>
+                </div>
+            </div>
+        </div>
+        <style>
+            .modern-win-content {
+                background: linear-gradient(135deg, var(--primary) 60%, var(--secondary) 100%);
+                color: var(--text);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+                border: none;
+                position: relative;
+                overflow: hidden;
+                padding: 32px 20px 28px 20px;
+                transition: background 0.3s, color 0.3s;
+            }
+            
+            .modern-win-bg-corner {
+                position: absolute;
+                width: 120px;
+                height: 120px;
+                z-index: 0;
+                pointer-events: none;
+            }
+            
+            .modern-win-bg-corner-top {
+                top: -40px;
+                right: -40px;
+                background: radial-gradient(circle, var(--highlight) 0%, transparent 70%);
+                opacity: 0.25;
+            }
+            
+            .modern-win-bg-corner-bottom {
+                bottom: -40px;
+                left: -40px;
+                background: radial-gradient(circle, var(--success) 0%, transparent 70%);
+                opacity: 0.18;
+            }
+            
+            .modern-win-title {
+                font-size: 2.2rem;
+                margin: 0 0 10px;
+                color: var(--highlight);
+                letter-spacing: 1px;
+                font-weight: 800;
+                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                transition: color 0.3s;
+            }
+            
+            .modern-win-desc {
+                font-size: 1.1rem;
+                margin-bottom: 18px;
+                color: var(--text);
+                opacity: 0.92;
+                transition: color 0.3s;
+            }
+            
+            .modern-win-stats {
+                margin: 0 0 18px;
+            }
+            
+            .modern-win-statbox {
+                background: rgba(255, 255, 255, 0.18);
+                border-radius: 10px;
+                padding: 16px 22px;
+                min-width: 90px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+                text-align: center;
+                transition: background 0.3s;
+            }
+            
+            .modern-win-label {
+                font-size: 1.1rem;
+                color: var(--highlight);
+                font-weight: 700;
+                letter-spacing: 0.5px;
+                margin-bottom: 2px;
+                transition: color 0.3s;
+            }
+            
+            .modern-win-value {
+                font-size: 1.7rem;
+                font-weight: bold;
+                color: var(--success);
+                transition: color 0.3s;
+            }
+            
+            .modern-win-time {
+                color: var(--primary);
+            }
+            
+            .modern-win-topscores {
+                font-size: 1rem;
+                color: var(--text);
+                opacity: 0.8;
+                transition: color 0.3s;
+            }
+            
+            .modern-win-table {
+                width: 100%;
+                margin: 10px 0 0;
+                border-collapse: separate;
+                border-spacing: 0 4px;
+                font-size: 0.98rem;
+                background: transparent;
+            }
+            
+            .modern-win-table th {
+                color: var(--primary);
+                font-weight: bold;
+                padding: 4px 8px;
+                background: transparent;
+                transition: color 0.3s;
+            }
+            
+            .modern-win-table td {
+                padding: 4px 8px;
+                background: rgba(255, 255, 255, 0.10);
+                border-radius: 6px;
+                color: var(--text);
+                transition: background 0.3s, color 0.3s;
+            }
+            
+            .modern-win-table tr.highlight,
+            .modern-win-table tr.highlight td {
+                background: rgba(255, 255, 255, 0.12) !important;
+                font-weight: bold;
+            }
+            
+            .modern-win-btn {
+                font-size: 1.08rem;
+                padding: 10px 28px;
+                border-radius: 8px;
+                transition: background 0.3s, color 0.3s, border 0.3s;
+            }
+            
+            .modern-win-btn-alt {
+                background: var(--button-bg);
+                color: var(--primary);
+                border: 1.5px solid var(--primary);
+                font-weight: 600;
+            }
+            /* Theme-specific overrides for win screen */
+            
+            body.dark-mode .modern-win-content {
+                background: linear-gradient(135deg, #232b3d 60%, #4a6baf 100%);
+                color: #f7fafc;
+            }
+            
+            body.dark-mode .modern-win-title {
+                color: #f6e05e;
+            }
+            
+            body.dark-mode .modern-win-label {
+                color: #f6e05e;
+            }
+            
+            body.dark-mode .modern-win-value {
+                color: #48bb78;
+            }
+            
+            body.dark-mode .modern-win-time {
+                color: #6a8fd8;
+            }
+            
+            body.dark-mode .modern-win-topscores {
+                color: #f7fafc;
+            }
+            
+            body.dark-mode .modern-win-table th {
+                color: #6a8fd8;
+            }
+            
+            body.dark-mode .modern-win-table td {
+                color: #f7fafc;
+            }
+            
+            body.neon-mode .modern-win-content {
+                background: linear-gradient(135deg, #ff00ff 60%, #00ffff 100%);
+                color: #e6f7ff;
+            }
+            
+            body.neon-mode .modern-win-title {
+                color: #ffff00;
+                text-shadow: 0 0 8px #ff00ff, 0 0 2px #00ffff;
+            }
+            
+            body.neon-mode .modern-win-label {
+                color: #ffff00;
+            }
+            
+            body.neon-mode .modern-win-value {
+                color: #00ff88;
+                text-shadow: 0 0 6px #00ff88;
+            }
+            
+            body.neon-mode .modern-win-time {
+                color: #00ffff;
+            }
+            
+            body.neon-mode .modern-win-topscores {
+                color: #e6f7ff;
+            }
+            
+            body.neon-mode .modern-win-table th {
+                color: #00ffff;
+            }
+            
+            body.neon-mode .modern-win-table td {
+                color: #e6f7ff;
+                background: rgba(0, 255, 255, 0.08);
+            }
+            
+            body.neon-mode .modern-win-table tr.highlight,
+            body.neon-mode .modern-win-table tr.highlight td {
+                background: rgba(255, 255, 0, 0.15) !important;
+                font-weight: bold;
+            }
+        </style>
+    </div>
+
+    <script>
+        // Emoji categories
+        const emojiCategories = {
+            random: ["🍎", "🐶", "🚗", "⚽", "❤️", "🔧", "🍌", "🐱", "✈️", "🏀", "💙", "🔨", "🍒", "🦁", "🚲", "🎾", "💚", "🛠️"],
+            flags: ["🇺🇸", "🇬🇧", "🇨🇦", "🇯🇵", "🇫🇷", "🇩🇪", "🇮🇹", "🇧🇷", "🇦🇺", "🇮🇳", "🇨🇳", "🇰🇷"],
+            food: ["🍔", "🍕", "🍟", "🌭", "🍦", "🍩", "☕", "🍵", "🍺", "🍷", "🍫", "🍭"],
+            animals: ["🐶", "🐱", "🦁", "🐯", "🐮", "🐷", "🐸", "🐵", "🐔", "🐦", "🐴", "🐝"],
+            shapes: ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "⚫", "⚪", "🟤", "♦️", "♥️", "♣️"],
+            numbers: ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟", "0️⃣", "#️⃣"],
+            letters: ["🅰️", "🅱️", "©️", "🆎", "ℹ️", "🅾️", "🆑", "🆘", "🆚", "🈁", "🈯", "🈶"],
+            fruits: ["🍎", "🍌", "🍒", "🍓", "🍊", "🍋", "🍍", "🍇", "🍉", "🍑", "🍈", "🥝"],
+            clothing: ["👕", "👖", "👗", "👔", "👓", "🕶️", "🎩", "👟", "👞", "👠", "👢", "🧦"],
+            sports: ["⚽", "🏀", "🎾", "🏈", "⚾", "🏐", "🎱", "🏓", "🏸", "🏒", "⛳", "🏹"],
+            weather: ["☀️", "🌤️", "⛅", "🌥️", "☁️", "🌦️", "🌧️", "⛈️", "🌩️", "❄️", "🌨️", "🌪️"],
+            time: ["🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", "🕛"],
+            transport: ["🚗", "✈️", "🚲", "🚂", "🚀", "🚢", "🚁", "🚜", "🏍️", "🚒", "🚑", "🚓"],
+            travel: ["🗽", "🗼", "🗿", "🏰", "🏯", "🏟️", "🎡", "🎢", "⛲", "🌋", "🏕️", "🏖️"],
+            people: ["👶", "🧒", "👦", "👧", "🧑", "👨", "👩", "🧓", "👴", "👵", "👮", "👷"]
+        };
+
+        // Game state
+        let gameState = {
+            cards: [],
+            flippedCards: [],
+            matchedPairs: 0,
+            moves: 0,
+            timer: null,
+            seconds: 0,
+            isPlaying: false,
+            classroomMode: false,
+            memorizationTimer: null,
+            rankings: {
+                "3x2": [{
+                    moves: 12,
+                    time: 30
+                }, {
+                    moves: 15,
+                    time: 45
+                }],
+                "4x3": [{
+                    moves: 18,
+                    time: 60
+                }, {
+                    moves: 20,
+                    time: 75
+                }],
+                "4x4": [{
+                    moves: 24,
+                    time: 90
+                }, {
+                    moves: 28,
+                    time: 120
+                }],
+                "5x4": [{
+                    moves: 18,
+                    time: 40
+                }, {
+                    moves: 21,
+                    time: 98
+                }, {
+                    moves: 30,
+                    time: 50
+                }],
+                "6x5": [{
+                    moves: 35,
+                    time: 150
+                }, {
+                    moves: 40,
+                    time: 180
+                }],
+                "8x5": [{
+                    moves: 45,
+                    time: 200
+                }, {
+                    moves: 50,
+                    time: 240
+                }],
+                "8x6": [{
+                    moves: 60,
+                    time: 300
+                }, {
+                    moves: 65,
+                    time: 350
+                }]
+            }
+        };
+
+        // DOM elements
+        const gameBoard = document.getElementById('game-board');
+        const categorySelect = document.getElementById('category-select');
+        const sizeSelect = document.getElementById('size-select');
+        const restartBtn = document.getElementById('restart-btn');
+        const classroomBtn = document.getElementById('classroom-btn');
+        const timeDisplay = document.getElementById('time');
+        const movesDisplay = document.getElementById('moves');
+        const matchFeedback = document.getElementById('match-feedback');
+        const winScreen = document.getElementById('win-screen');
+        const winMoves = document.getElementById('win-moves');
+        const winTime = document.getElementById('win-time');
+        const boardSizeDisplay = document.getElementById('board-size');
+        const retryBtn = document.getElementById('retry-btn');
+        const playNextBtn = document.getElementById('play-next-btn');
+        const themeBtns = document.querySelectorAll('.theme-btn');
+
+        // Initialize game
+        function initGame() {
+            clearInterval(gameState.timer);
+            clearTimeout(gameState.memorizationTimer);
+            gameState = {
+                ...gameState,
+                cards: [],
+                flippedCards: [],
+                matchedPairs: 0,
+                moves: 0,
+                timer: null,
+                seconds: 0,
+                isPlaying: false,
+                memorizationTimer: null
+            };
+
+            movesDisplay.textContent = '0';
+            timeDisplay.textContent = '00:00';
+
+            createBoard();
+        }
+
+        // Create game board
+        function createBoard() {
+            gameBoard.innerHTML = '';
+
+            const size = sizeSelect.value;
+            const [rows, cols] = size.split('x').map(Number);
+            const totalPairs = (rows * cols) / 2;
+
+            gameBoard.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+            // Get selected category
+            const category = categorySelect.value;
+            let emojis = [...emojiCategories[category]];
+
+            // If random, combine all categories
+            if (category === 'random') {
+                emojis = [];
+                for (const key in emojiCategories) {
+                    if (key !== 'random') {
+                        emojis.push(...emojiCategories[key]);
+                    }
+                }
+                // Shuffle and take enough for the board
+                emojis = shuffleArray(emojis).slice(0, totalPairs);
+            } else {
+                // Shuffle and take needed emojis from category
+                emojis = shuffleArray(emojis).slice(0, totalPairs);
+            }
+
+            // Create pairs
+            let cardEmojis = [...emojis, ...emojis];
+            cardEmojis = shuffleArray(cardEmojis);
+
+            // Create cards
+            gameState.cards = cardEmojis.map((emoji, index) => {
+                return {
+                    emoji,
+                    index,
+                    flipped: false,
+                    matched: false
+                };
+            });
+
+            // Render cards
+            gameState.cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.dataset.index = index;
+
+                const cardBack = document.createElement('div');
+                cardBack.className = 'card-back';
+
+                // For classroom mode, show coordinates (A1, B1, etc.)
+                if (gameState.classroomMode) {
+                    const row = Math.floor(index / cols);
+                    const col = index % cols;
+                    const rowLetter = String.fromCharCode(65 + row);
+                    cardBack.textContent = `${rowLetter}${col + 1}`;
+                }
+
+                const cardFront = document.createElement('div');
+                cardFront.className = 'card-front';
+                cardFront.textContent = card.emoji;
+
+                cardElement.appendChild(cardBack);
+                cardElement.appendChild(cardFront);
+
+                cardElement.addEventListener('click', () => handleCardClick(index));
+
+                gameBoard.appendChild(cardElement);
+            });
+
+            // If classroom mode, show all cards for 3 seconds then start game
+            if (gameState.classroomMode) {
+                flipAllCards(true);
+                gameState.isPlaying = false; // Disable card clicks during memorization
+
+                gameState.memorizationTimer = setTimeout(() => {
+                    flipAllCards(false);
+                    gameState.isPlaying = true; // Enable card clicks after memorization
+                    startTimer();
+                }, 3000);
+            } else {
+                gameState.isPlaying = true;
+                startTimer();
+            }
+        }
+
+        // Handle card click
+        function handleCardClick(index) {
+            if (!gameState.isPlaying) return;
+
+            const card = gameState.cards[index];
+            const cardElement = gameBoard.children[index];
+
+            // Don't allow flipping if already flipped or matched
+            if (card.flipped || card.matched || gameState.flippedCards.length >= 2) return;
+
+            // Flip card
+            flipCard(index, true);
+            gameState.flippedCards.push(index);
+
+            // Check for match if two cards are flipped
+            if (gameState.flippedCards.length === 2) {
+                gameState.moves++;
+                movesDisplay.textContent = gameState.moves;
+
+                const firstIndex = gameState.flippedCards[0];
+                const secondIndex = gameState.flippedCards[1];
+
+                if (gameState.cards[firstIndex].emoji === gameState.cards[secondIndex].emoji) {
+                    // Match found
+                    gameState.cards[firstIndex].matched = true;
+                    gameState.cards[secondIndex].matched = true;
+                    gameState.matchedPairs++;
+
+                    // Show match feedback
+                    showMatchFeedback();
+
+                    gameState.flippedCards = [];
+
+                    // Check for win
+                    const totalPairs = (parseInt(sizeSelect.value.split('x')[0]) * parseInt(sizeSelect.value.split('x')[1])) / 2;
+                    if (gameState.matchedPairs === totalPairs) {
+                        endGame();
+                    }
+                } else {
+                    // No match, flip back after delay
+                    setTimeout(() => {
+                        flipCard(firstIndex, false);
+                        flipCard(secondIndex, false);
+                        gameState.flippedCards = [];
+                    }, 1000);
+                }
+            }
+        }
+
+        // Show match feedback (green tick)
+        function showMatchFeedback() {
+            matchFeedback.classList.add('show');
+            setTimeout(() => {
+                matchFeedback.classList.remove('show');
+            }, 1000);
+        }
+
+        // Flip card
+        function flipCard(index, isFlipped) {
+            const card = gameState.cards[index];
+            const cardElement = gameBoard.children[index];
+
+            card.flipped = isFlipped;
+
+            if (isFlipped) {
+                cardElement.classList.add('flipped');
+            } else {
+                cardElement.classList.remove('flipped');
+            }
+        }
+
+        // Flip all cards
+        function flipAllCards(isFlipped) {
+            gameState.cards.forEach((card, index) => {
+                flipCard(index, isFlipped);
+            });
+        }
+
+        // Start timer
+        function startTimer() {
+            clearInterval(gameState.timer);
+            gameState.seconds = 0;
+            updateTimerDisplay();
+
+            gameState.timer = setInterval(() => {
+                gameState.seconds++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        // Update timer display
+        function updateTimerDisplay() {
+            const minutes = Math.floor(gameState.seconds / 60);
+            const seconds = gameState.seconds % 60;
+            timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // End game (win)
+        function endGame() {
+            clearInterval(gameState.timer);
+            gameState.isPlaying = false;
+
+            // Update win screen
+            const size = sizeSelect.value;
+            boardSizeDisplay.textContent = size;
+            winMoves.textContent = gameState.moves;
+            winTime.textContent = timeDisplay.textContent;
+
+            // Add current game to rankings
+            gameState.rankings[size].push({
+                moves: gameState.moves,
+                time: gameState.seconds
+            });
+
+            // Sort rankings by moves then time
+            gameState.rankings[size].sort((a, b) => {
+                if (a.moves !== b.moves) return a.moves - b.moves;
+                return a.time - b.time;
+            });
+
+            winScreen.classList.add('show');
+        }
+
+        // Shuffle array using Fisher-Yates algorithm
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // Set theme
+        function setTheme(theme) {
+            document.body.className = theme === 'light' ? '' : `${theme}-mode`;
+
+            // Update active theme button
+            themeBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === theme);
+            });
+        }
+
+        // Event listeners
+        restartBtn.addEventListener('click', initGame);
+
+        classroomBtn.addEventListener('click', () => {
+            gameState.classroomMode = !gameState.classroomMode;
+            classroomBtn.textContent = gameState.classroomMode ? 'Exit Classroom' : 'Classroom Mode';
+            initGame();
+        });
+
+        retryBtn.addEventListener('click', () => {
+            winScreen.classList.remove('show');
+            initGame();
+        });
+
+        playNextBtn.addEventListener('click', () => {
+            winScreen.classList.remove('show');
+            categorySelect.value = 'random';
+            initGame();
+        });
+
+        categorySelect.addEventListener('change', initGame);
+        sizeSelect.addEventListener('change', initGame);
+
+        // Theme button event listeners
+        themeBtns.forEach(btn => {
+            btn.addEventListener('click', () => setTheme(btn.dataset.theme));
+        });
+
+        // Initialize first game and set default theme
+        initGame();
+        setTheme('light');
+    </script>
+</body>
+
+</html>

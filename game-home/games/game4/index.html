@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Crush Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .game-container {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border-radius: 25px;
+            padding: 25px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            max-width: 450px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 0 5px;
+        }
+        
+        .score-display,
+        .timer-display,
+        .highscore-display,
+        .level-display {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 8px 16px rgba(238, 90, 82, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            margin: 5px 0;
+        }
+        
+        .timer-display {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            box-shadow: 0 8px 16px rgba(78, 205, 196, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .highscore-display {
+            background: linear-gradient(135deg, #ffb347, #ff8c00);
+            box-shadow: 0 8px 16px rgba(255, 140, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .level-display {
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+            box-shadow: 0 8px 16px rgba(155, 89, 182, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            background: linear-gradient(145deg, #e0e0e0, #f5f5f5);
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: inset 0 8px 16px rgba(0, 0, 0, 0.1), inset 0 -4px 8px rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .candy {
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+        
+        .candy:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+        
+        .candy.red {
+            background-image: url('assets/red.png');
+        }
+        
+        .candy.blue {
+            background-image: url('assets/blue.png');
+        }
+        
+        .candy.green {
+            background-image: url('assets/green.png');
+        }
+        
+        .candy.yellow {
+            background-image: url('assets/yellow.png');
+        }
+        
+        .candy.purple {
+            background-image: url('assets/purple.png');
+        }
+        
+        .candy.orange {
+            background-image: url('assets/orange.png');
+        }
+        
+        .candy.selected {
+            transform: scale(1.1);
+            border-color: #ffdc00;
+            box-shadow: 0 0 20px rgba(255, 220, 0, 0.6), 0 6px 12px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+        
+        .candy.falling {
+            animation: fall 0.5s ease-out;
+        }
+        
+        @keyframes fall {
+            from {
+                transform: translateY(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .candy.exploding {
+            animation: explode 0.5s ease-out forwards;
+        }
+        
+        @keyframes explode {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.3);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+        
+        .feedback-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            pointer-events: none;
+            animation: feedbackPop 1.5s ease-out forwards;
+        }
+        
+        @keyframes feedbackPop {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            20% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 1;
+            }
+            80% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0;
+            }
+        }
+        
+        .game-over-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        
+        .game-over-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .game-over-content {
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            color: #333;
+            padding: 50px 40px;
+            border-radius: 25px;
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .game-over-modal.show .game-over-content {
+            transform: scale(1);
+        }
+        
+        .game-over-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .final-score {
+            font-size: 20px;
+            margin-bottom: 35px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        .game-over-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-home {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+        
+        .btn-replay {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+        
+        .combo-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 16px;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .combo-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .challenge-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 10px;
+            margin-top: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .challenge-progress {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .challenge-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #45b7d1);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+        
+        .challenge-text {
+            font-size: 14px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 20px;
+                margin: 20px;
+            }
+            .candy {
+                width: 35px;
+                height: 35px;
+            }
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <div class="stats-container">
+            <div class="score-display">Score: <span id="score">0</span></div>
+            <div class="highscore-display">High Score: <span id="highScore">0</span></div>
+            <div class="timer-display">Time: <span id="timer">0</span>s</div>
+            <div class="level-display">Level: <span id="level">1</span></div>
+        </div>
+
+        <div class="challenge-container">
+            <div class="challenge-text" id="challengeText">Match 20 red candies (0/20)</div>
+            <div class="challenge-progress">
+                <div class="challenge-progress-bar" id="challengeProgress" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="game-board" id="gameBoard"></div>
+    </div>
+
+    <div class="combo-indicator" id="comboIndicator"></div>
+
+    <div class="game-over-modal" id="gameOverModal">
+        <div class="game-over-content">
+            <div class="game-over-title">Thank you for playing!</div>
+            <div class="final-score">Your score is: <span id="finalScore">0</span></div>
+            <div class="game-over-buttons">
+                <button class="btn btn-home" onclick="goHome()">Home</button>
+                <button class="btn btn-replay" onclick="restartGame()">Replay</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class CandyCrush {
+            constructor() {
+                this.board = [];
+                this.size = 8;
+                this.colors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+                this.score = 0;
+                this.timeElapsed = 0;
+                this.highScore = localStorage.getItem('candyCrushHighScore') || 0;
+                this.selectedCandy = null;
+                this.gameActive = true;
+                this.comboCount = 0;
+                this.comboTimer = null;
+                this.level = 1;
+                this.currentChallenge = this.generateChallenge();
+                this.challengeProgress = 0;
+
+                this.initializeGame();
+                this.startTimer();
+                this.updateHighScoreDisplay();
+            }
+
+            initializeGame() {
+                this.createBoard();
+                this.renderBoard();
+                this.removeInitialMatches();
+                this.updateChallengeDisplay();
+            }
+
+            createBoard() {
+                this.board = [];
+                for (let row = 0; row < this.size; row++) {
+                    this.board[row] = [];
+                    for (let col = 0; col < this.size; col++) {
+                        this.board[row][col] = this.getRandomColor();
+                    }
+                }
+            }
+
+            getRandomColor() {
+                return this.colors[Math.floor(Math.random() * this.colors.length)];
+            }
+
+            renderBoard() {
+                const gameBoard = document.getElementById('gameBoard');
+                gameBoard.innerHTML = '';
+
+                for (let row = 0; row < this.size; row++) {
+                    for (let col = 0; col < this.size; col++) {
+                        const candy = document.createElement('div');
+                        candy.className = `candy ${this.board[row][col]}`;
+                        candy.dataset.row = row;
+                        candy.dataset.col = col;
+                        candy.addEventListener('click', (e) => this.handleCandyClick(e));
+                        gameBoard.appendChild(candy);
+                    }
+                }
+            }
+
+            handleCandyClick(event) {
+                if (!this.gameActive) return;
+
+                const candy = event.target;
+                const row = parseInt(candy.dataset.row);
+                const col = parseInt(candy.dataset.col);
+
+                if (this.selectedCandy) {
+                    if (this.selectedCandy.row === row && this.selectedCandy.col === col) {
+                        this.deselectCandy();
+                        return;
+                    }
+
+                    if (this.areAdjacent(this.selectedCandy, {
+                            row,
+                            col
+                        })) {
+                        this.swapCandies(this.selectedCandy, {
+                            row,
+                            col
+                        });
+                        this.deselectCandy();
+                    } else {
+                        this.deselectCandy();
+                        this.selectCandy(candy, row, col);
+                    }
+                } else {
+                    this.selectCandy(candy, row, col);
+                }
+            }
+
+            selectCandy(candy, row, col) {
+                candy.classList.add('selected');
+                this.selectedCandy = {
+                    row,
+                    col,
+                    element: candy
+                };
+            }
+
+            deselectCandy() {
+                if (this.selectedCandy) {
+                    this.selectedCandy.element.classList.remove('selected');
+                    this.selectedCandy = null;
+                }
+            }
+
+            areAdjacent(candy1, candy2) {
+                const rowDiff = Math.abs(candy1.row - candy2.row);
+                const colDiff = Math.abs(candy1.col - candy2.col);
+                return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+            }
+
+            swapCandies(candy1, candy2) {
+                const temp = this.board[candy1.row][candy1.col];
+                this.board[candy1.row][candy1.col] = this.board[candy2.row][candy2.col];
+                this.board[candy2.row][candy2.col] = temp;
+
+                this.renderBoard();
+
+                if (this.checkForMatches()) {
+                    this.processMatches();
+                } else {
+                    // Swap back if no matches
+                    setTimeout(() => {
+                        const temp = this.board[candy1.row][candy1.col];
+                        this.board[candy1.row][candy1.col] = this.board[candy2.row][candy2.col];
+                        this.board[candy2.row][candy2.col] = temp;
+                        this.renderBoard();
+                    }, 300);
+                }
+            }
+
+            checkForMatches() {
+                const matches = [];
+                const horizontalMatches = {};
+                const verticalMatches = {};
+
+                // Check horizontal matches
+                for (let row = 0; row < this.size; row++) {
+                    for (let col = 0; col < this.size - 2; col++) {
+                        const color = this.board[row][col];
+                        if (color === this.board[row][col + 1] && color === this.board[row][col + 2]) {
+                            let matchLength = 3;
+                            while (col + matchLength < this.size && this.board[row][col + matchLength] === color) {
+                                matchLength++;
+                            }
+
+                            // Mark all positions in this match
+                            for (let i = 0; i < matchLength; i++) {
+                                const pos = `${row},${col + i}`;
+                                horizontalMatches[pos] = true;
+                                matches.push({
+                                    row,
+                                    col: col + i,
+                                    color: color
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // Check vertical matches
+                for (let col = 0; col < this.size; col++) {
+                    for (let row = 0; row < this.size - 2; row++) {
+                        const color = this.board[row][col];
+                        if (color === this.board[row + 1][col] && color === this.board[row + 2][col]) {
+                            let matchLength = 3;
+                            while (row + matchLength < this.size && this.board[row + matchLength][col] === color) {
+                                matchLength++;
+                            }
+
+                            // Mark all positions in this match
+                            for (let i = 0; i < matchLength; i++) {
+                                const pos = `${row + i},${col}`;
+                                verticalMatches[pos] = true;
+                                matches.push({
+                                    row: row + i,
+                                    col,
+                                    color: color
+                                });
+                            }
+                        }
+                    }
+                }
+
+                this.currentMatches = matches;
+                return matches.length > 0;
+            }
+
+            processMatches() {
+                if (!this.currentMatches.length) return;
+
+                const matchCount = this.currentMatches.length;
+                this.animateMatches();
+
+                setTimeout(() => {
+                    this.removeMatches();
+                    this.updateScore(matchCount);
+                    this.updateChallengeProgress();
+                    this.showFeedback(matchCount);
+                    this.dropCandies();
+                    this.fillBoard();
+
+                    setTimeout(() => {
+                        if (this.checkForMatches()) {
+                            this.comboCount++;
+                            this.showCombo();
+                            this.processMatches();
+                        } else {
+                            this.comboCount = 0;
+                            this.checkGameOver();
+                        }
+                    }, 500);
+                }, 500);
+            }
+
+            animateMatches() {
+                this.currentMatches.forEach(match => {
+                    const candy = document.querySelector(`[data-row="${match.row}"][data-col="${match.col}"]`);
+                    if (candy) {
+                        candy.classList.add('exploding');
+                    }
+                });
+            }
+
+            removeMatches() {
+                this.currentMatches.forEach(match => {
+                    this.board[match.row][match.col] = null;
+                });
+            }
+
+            updateScore(matchCount) {
+                let baseScore = matchCount * 10;
+                let comboBonus = this.comboCount * 50;
+                let levelBonus = this.level * 5;
+                this.score += baseScore + comboBonus + levelBonus;
+                document.getElementById('score').textContent = this.score;
+
+                if (this.score > this.highScore) {
+                    this.highScore = this.score;
+                    localStorage.setItem('candyCrushHighScore', this.highScore);
+                    this.updateHighScoreDisplay();
+                }
+            }
+
+            updateHighScoreDisplay() {
+                document.getElementById('highScore').textContent = this.highScore;
+            }
+
+            showFeedback(matchCount) {
+                const feedbacks = ['Good!', 'Great!', 'Excellent!', 'Wonderful!', 'Amazing!'];
+                let feedback = feedbacks[Math.min(matchCount - 3, feedbacks.length - 1)];
+
+                if (this.comboCount > 0) {
+                    feedback += ` Combo x${this.comboCount + 1}!`;
+                }
+
+                const feedbackElement = document.createElement('div');
+                feedbackElement.className = 'feedback-text';
+                feedbackElement.textContent = feedback;
+                document.body.appendChild(feedbackElement);
+
+                setTimeout(() => {
+                    feedbackElement.remove();
+                }, 1500);
+            }
+
+            showCombo() {
+                const comboIndicator = document.getElementById('comboIndicator');
+                comboIndicator.textContent = `Combo x${this.comboCount + 1}!`;
+                comboIndicator.classList.add('show');
+
+                clearTimeout(this.comboTimer);
+                this.comboTimer = setTimeout(() => {
+                    comboIndicator.classList.remove('show');
+                }, 2000);
+            }
+
+            dropCandies() {
+                for (let col = 0; col < this.size; col++) {
+                    let emptySpaces = 0;
+
+                    // Find empty spaces from bottom up
+                    for (let row = this.size - 1; row >= 0; row--) {
+                        if (this.board[row][col] === null) {
+                            emptySpaces++;
+                        } else if (emptySpaces > 0) {
+                            // Move candy down to fill empty space
+                            this.board[row + emptySpaces][col] = this.board[row][col];
+                            this.board[row][col] = null;
+                        }
+                    }
+                }
+            }
+
+            fillBoard() {
+                for (let row = 0; row < this.size; row++) {
+                    for (let col = 0; col < this.size; col++) {
+                        if (this.board[row][col] === null) {
+                            this.board[row][col] = this.getRandomColor();
+                        }
+                    }
+                }
+                this.renderBoard();
+                this.animateNewCandies();
+            }
+
+            animateNewCandies() {
+                const candies = document.querySelectorAll('.candy');
+                candies.forEach(candy => {
+                    candy.classList.add('falling');
+                    setTimeout(() => {
+                        candy.classList.remove('falling');
+                    }, 500);
+                });
+            }
+
+            removeInitialMatches() {
+                while (this.checkForMatches()) {
+                    this.removeMatches();
+                    this.dropCandies();
+                    this.fillBoard();
+                }
+            }
+
+            checkGameOver() {
+                // Check for possible moves
+                for (let row = 0; row < this.size; row++) {
+                    for (let col = 0; col < this.size; col++) {
+                        if (this.hasPossibleMove(row, col)) {
+                            return;
+                        }
+                    }
+                }
+
+                // No moves available
+                this.endGame();
+            }
+
+            hasPossibleMove(row, col) {
+                const directions = [
+                    [0, 1],
+                    [0, -1],
+                    [1, 0],
+                    [-1, 0]
+                ];
+
+                for (let [dr, dc] of directions) {
+                    const newRow = row + dr;
+                    const newCol = col + dc;
+
+                    if (newRow >= 0 && newRow < this.size && newCol >= 0 && newCol < this.size) {
+                        // Simulate swap
+                        const temp = this.board[row][col];
+                        this.board[row][col] = this.board[newRow][newCol];
+                        this.board[newRow][newCol] = temp;
+
+                        const hasMatch = this.checkForMatches();
+
+                        // Swap back
+                        this.board[newRow][newCol] = this.board[row][col];
+                        this.board[row][col] = temp;
+
+                        if (hasMatch) {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+            startTimer() {
+                this.timerInterval = setInterval(() => {
+                    this.timeElapsed++;
+                    document.getElementById('timer').textContent = this.timeElapsed;
+                }, 1000);
+            }
+
+            endGame() {
+                this.gameActive = false;
+                clearInterval(this.timerInterval);
+                document.getElementById('finalScore').textContent = this.score;
+                document.getElementById('gameOverModal').classList.add('show');
+            }
+
+            generateChallenge() {
+                const challengeTypes = [{
+                    type: 'color',
+                    color: this.colors[Math.floor(Math.random() * this.colors.length)],
+                    target: 20 + (this.level * 5)
+                }, {
+                    type: 'any',
+                    target: 30 + (this.level * 5)
+                }, {
+                    type: 'combo',
+                    target: 3 + Math.floor(this.level / 2)
+                }];
+
+                return challengeTypes[Math.floor(Math.random() * challengeTypes.length)];
+            }
+
+            updateChallengeProgress() {
+                if (!this.currentChallenge) return;
+
+                let progressToAdd = 0;
+
+                if (this.currentChallenge.type === 'color') {
+                    // Count each matched candy of the target color
+                    progressToAdd = this.currentMatches.filter(match =>
+                        match.color === this.currentChallenge.color
+                    ).length;
+                } else if (this.currentChallenge.type === 'any') {
+                    // Count all matched candies
+                    progressToAdd = this.currentMatches.length;
+                } else if (this.currentChallenge.type === 'combo' && this.comboCount > 0) {
+                    // Count each combo
+                    progressToAdd = 1;
+                }
+
+                // Update progress
+                this.challengeProgress += progressToAdd;
+
+                // Update display
+                const progressPercent = Math.min(100, (this.challengeProgress / this.currentChallenge.target) * 100);
+                document.getElementById('challengeProgress').style.width = `${progressPercent}%`;
+                this.updateChallengeDisplay();
+
+                // Check if challenge is completed
+                if (this.challengeProgress >= this.currentChallenge.target) {
+                    this.levelUp();
+                }
+            }
+
+            updateChallengeDisplay() {
+                let challengeText = '';
+
+                if (this.currentChallenge.type === 'color') {
+                    challengeText = `Match ${this.currentChallenge.target} ${this.currentChallenge.color} candies (${Math.min(this.challengeProgress, this.currentChallenge.target)}/${this.currentChallenge.target})`;
+                } else if (this.currentChallenge.type === 'any') {
+                    challengeText = `Match ${this.currentChallenge.target} candies (${Math.min(this.challengeProgress, this.currentChallenge.target)}/${this.currentChallenge.target})`;
+                } else if (this.currentChallenge.type === 'combo') {
+                    challengeText = `Make ${this.currentChallenge.target} combos (${Math.min(this.challengeProgress, this.currentChallenge.target)}/${this.currentChallenge.target})`;
+                }
+
+                document.getElementById('challengeText').textContent = challengeText;
+            }
+
+            levelUp() {
+                this.level++;
+                document.getElementById('level').textContent = this.level;
+
+                // Reset challenge for new level
+                this.currentChallenge = this.generateChallenge();
+                this.challengeProgress = 0;
+                this.updateChallengeDisplay();
+
+                // Show level up feedback
+                const feedbackElement = document.createElement('div');
+                feedbackElement.className = 'feedback-text';
+                feedbackElement.textContent = `Level ${this.level}!`;
+                feedbackElement.style.color = '#8e44ad';
+                document.body.appendChild(feedbackElement);
+
+                setTimeout(() => {
+                    feedbackElement.remove();
+                }, 1500);
+            }
+        }
+
+        function goHome() {
+            alert('Going to home page...');
+            // Implement home page navigation
+        }
+
+        function restartGame() {
+            document.getElementById('gameOverModal').classList.remove('show');
+            game = new CandyCrush();
+        }
+
+        // Initialize the game
+        let game = new CandyCrush();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>MindMatch AI</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧠 MindMatch AI 🎯</h1>
+        <p class="status">Guess AI's hidden tile</p>
+        <div class="grid" id="grid"></div>
+        <div class="scoreboard">
+            <span>👨 You: <span id="playerScore">0</span></span>
+            <audio id="bgm" src="sounds/bg.mp3" autoplay loop></audio>
+            <span>🤖 AI: <span id="aiScore">0</span></span>
+        </div>
+        <button onclick="window.location.href='/c:/Rithesh/gamepage/game-home/style.html'">Home</button>
+    </div>
+    <!-- Sound Effects -->
+    <audio id="bgm" src="sounds/bg.mp3" autoplay loop muted></audio>
+    <audio id="winSound" src="sounds/win.mp3" preload="auto"></audio>
+    <audio id="loseSound" src="sounds/lose.mp3" preload="auto"></audio>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

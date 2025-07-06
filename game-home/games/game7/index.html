@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sliding Puzzle Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #ffffff;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            text-shadow: 2px 2px #000;
+        }
+        
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+        
+        select,
+        button {
+            padding: 10px 18px;
+            background: linear-gradient(to right, #ff3c87, #eb34ff);
+            border: none;
+            border-radius: 30px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 4px 0;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+        }
+        
+        select {
+            color: #222;
+            background: #fff;
+            font-weight: 600;
+            min-width: 80px;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+            background: linear-gradient(to right, #33f292, #00f2fe);
+        }
+        
+        .info {
+            margin-bottom: 10px;
+            font-size: 18px;
+            display: flex;
+            gap: 24px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-gap: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .tile {
+            background: linear-gradient(to bottom right, #56ccf2, #2f80ed);
+            color: #fff;
+            font-size: 28px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            user-select: none;
+        }
+        
+        .tile:hover {
+            transform: scale(1.05);
+            background: linear-gradient(to bottom right, #2f80ed, #56ccf2);
+        }
+        
+        .tile.empty {
+            background: rgba(255, 255, 255, 0.12);
+            border: 2px dashed #fff;
+            cursor: default;
+            box-shadow: none;
+        }
+        
+        .message {
+            font-size: 20px;
+            color: #00ff9c;
+            margin-top: 10px;
+        }
+        
+        .example {
+            display: grid;
+            gap: 6px;
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 12px;
+            border-radius: 10px;
+        }
+        
+        .example div {
+            background: #ffffff;
+            color: #222;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        
+        .example div:last-child {
+            background: transparent;
+            border: 1px dashed #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <audio id="bgm" src="bg.mp3" autoplay loop muted></audio>
+    <h1>SMART SLIDE</h1>
+    <div class="controls">
+        <label for="size">Grid Size:</label>
+        <select id="size">
+            <option value="3">3 x 3</option>
+            <option value="4" selected>4 x 4</option>
+            <option value="5">5 x 5</option>
+            <option value="6">6 x 6</option>
+        </select>
+        <button onclick="resetGame()">Reset</button>
+        <button onclick="toggleExample()">Show Example</button>
+    </div>
+    <div class="info">
+        <span>Time: <span id="timer">00:00</span></span>
+        <span>Moves: <span id="moves">0</span></span>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="message" id="message"></div>
+    <div class="example" id="example" style="display:none"></div>
+
+    <script>
+        const grid = document.getElementById('grid');
+        const message = document.getElementById('message');
+        const example = document.getElementById('example');
+        const timerEl = document.getElementById('timer');
+        const movesEl = document.getElementById('moves');
+        const sizeSelect = document.getElementById('size');
+
+        let tiles = [];
+        let gridSize = 4;
+        let moveCount = 0;
+        let timer = 0;
+        let timerInterval = null;
+        let started = false;
+
+        function pad(n) {
+            return n < 10 ? '0' + n : n;
+        }
+
+        function updateTimer() {
+            timer++;
+            timerEl.textContent = pad(Math.floor(timer / 60)) + ':' + pad(timer % 60);
+        }
+
+        function startTimer() {
+            if (!started) {
+                timerInterval = setInterval(updateTimer, 1000);
+                started = true;
+            }
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            started = false;
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timer = 0;
+            timerEl.textContent = "00:00";
+        }
+
+        function updateMoves() {
+            movesEl.textContent = moveCount;
+        }
+
+        function createTiles() {
+            do {
+                tiles = [...Array(gridSize * gridSize - 1).keys()].map(x => x + 1);
+                tiles.push(null);
+                shuffle(tiles);
+            } while (!isSolvable(tiles));
+            render();
+        }
+
+        // Fisher-Yates shuffle
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        // Check for solvability for any NxN grid
+        function isSolvable(arr) {
+            let invCount = 0;
+            let N = gridSize;
+            for (let i = 0; i < arr.length - 1; i++) {
+                for (let j = i + 1; j < arr.length; j++) {
+                    if (arr[i] && arr[j] && arr[i] > arr[j]) invCount++;
+                }
+            }
+            const blankIndex = arr.indexOf(null);
+            const blankRowFromBottom = N - Math.floor(blankIndex / N);
+            if (N % 2 === 1) {
+                // Odd grid: solvable if inversions is even
+                return invCount % 2 === 0;
+            } else {
+                // Even grid: solvable if (inversions + blankRowFromBottom) is even
+                return (invCount + blankRowFromBottom) % 2 === 0;
+            }
+        }
+
+        function render() {
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${gridSize}, 90px)`;
+            grid.style.gridTemplateRows = `repeat(${gridSize}, 90px)`;
+            tiles.forEach((tile, index) => {
+                const div = document.createElement('div');
+                div.className = 'tile' + (tile === null ? ' empty' : '');
+                div.style.height = div.style.width = '90px';
+                if (tile !== null) div.innerText = tile;
+                div.addEventListener('click', () => moveTile(index));
+                grid.appendChild(div);
+            });
+        }
+
+        function moveTile(index) {
+            const emptyIndex = tiles.indexOf(null);
+            const N = gridSize;
+            const validMoves = [
+                emptyIndex - 1,
+                emptyIndex + 1,
+                emptyIndex - N,
+                emptyIndex + N
+            ];
+            // Prevent wrapping across rows
+            if (validMoves.includes(index) &&
+                !(index % N === N - 1 && emptyIndex % N === 0) &&
+                !(index % N === 0 && emptyIndex % N === N - 1)) {
+                [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+                moveCount++;
+                updateMoves();
+                render();
+                if (!started) startTimer();
+                checkWin();
+            }
+        }
+
+        function checkWin() {
+            for (let i = 0; i < tiles.length - 1; i++) {
+                if (tiles[i] !== i + 1) return;
+            }
+            if (tiles[tiles.length - 1] !== null) return;
+            stopTimer();
+            message.textContent = `🎉 Congratulations! You solved it in ${moveCount} moves and ${timerEl.textContent} minutes!`;
+            setTimeout(() => {
+                message.textContent = '';
+                resetGame();
+            }, 4000);
+        }
+
+        function resetGame() {
+            message.textContent = '';
+            moveCount = 0;
+            updateMoves();
+            resetTimer();
+            createTiles();
+        }
+
+        function toggleExample() {
+            if (example.style.display === 'none') {
+                example.style.display = 'grid';
+                renderExample();
+            } else {
+                example.style.display = 'none';
+            }
+        }
+
+        function renderExample() {
+            example.innerHTML = '';
+            example.style.gridTemplateColumns = `repeat(${gridSize}, 34px)`;
+            for (let i = 1; i < gridSize * gridSize; i++) {
+                const div = document.createElement('div');
+                div.textContent = i;
+                div.style.height = div.style.width = '34px';
+                example.appendChild(div);
+            }
+            const emptyDiv = document.createElement('div');
+            emptyDiv.style.height = emptyDiv.style.width = '34px';
+            emptyDiv.style.background = 'transparent';
+            emptyDiv.style.border = '1px dashed #fff';
+            example.appendChild(emptyDiv);
+        }
+
+        sizeSelect.addEventListener('change', function() {
+            gridSize = parseInt(this.value);
+            resetGame();
+        });
+
+        // Initialize
+        gridSize = parseInt(sizeSelect.value);
+        resetGame();
+    </script>
+</body>
+
+</html>

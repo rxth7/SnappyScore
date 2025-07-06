@@ -1,0 +1,101 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(to right, #f5f7fa, #c3cfe2);
+    animation: fadeIn 1s ease-in;
+  }
+  
+  .container {
+    display: flex;
+    height: 100vh;
+  }
+  
+  .left {
+    flex: 1;
+    background-color: #cde0d3;
+    padding: 60px 40px;
+    text-align: center;
+  }
+  
+  .hero-image {
+    width: 70%;
+    max-width: 350px;
+    animation: zoomIn 1.2s ease-in-out;
+  }
+  
+  .quote-title {
+    font-size: 24px;
+    margin-top: 20px;
+    color: #2b2b2b;
+  }
+  
+  .quote-text {
+    font-size: 16px;
+    color: #ff7700;
+    font-style: italic;
+  }
+  
+  .right {
+    flex: 1;
+    background-color: #ffffff;
+    padding: 100px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: -10px 0 20px rgba(0, 0, 0, 0.05);
+  }
+  
+  .title {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  input[type="text"] {
+    width: 70%;
+    padding: 10px 15px;
+    font-size: 18px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    transition: 0.3s ease;
+  }
+  
+  input[type="text"]:focus {
+    border-color: #4caf50;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+  }
+  
+  .checkbox-container {
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: #555;
+  }
+  
+  button {
+    padding: 12px 30px;
+    font-size: 18px;
+    color: white;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  
+  button:hover {
+    background: linear-gradient(45deg, #5a67d8, #6b46c1);
+  }
+  
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes zoomIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  

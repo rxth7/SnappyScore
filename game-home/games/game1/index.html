@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tic Tac Toe - Game 1</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <audio autoplay loop>
+  <source src="bg.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+    <button id="playAudioBtn" title="Play Audio" style="font-size: 1.5em;">🔊</button>
+    <script>
+        const audio = document.querySelector('audio');
+        const playBtn = document.getElementById('playAudioBtn');
+        audio.autoplay = false;
+        audio.pause();
+
+        playBtn.onclick = function() {
+            audio.play();
+        };
+    </script>
+    <div class="game-container">
+        <h1>Tic Tac Toe vs AI 🤖</h1>
+        <div class="scoreboard">
+            <span>😊 You: <span id="playerScore">0</span></span>
+            <span>🤖 AI: <span id="aiScore">0</span></span>
+        </div>
+
+        <div id="board" class="board"></div>
+        <p id="status">Your turn</p>
+        <button onclick="resetGame()">Restart Game</button>
+        <div>
+            <button onclick="window.location.href='/c:/Rithesh/gamepage/game-home/style.html'">Home</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

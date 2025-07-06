@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to GameWorld</title>
+    <link rel="stylesheet" href="setup.css" />
+</head>
+
+<body>
+    <div class="container">
+        <div class="left">
+            <img src="setup.jpg" alt="Game Illustration" class="hero-image" />
+            <h2 class="quote-title">Welcome to TrioHub</h2>
+            <p class="quote-text">Dive into fun and exciting games. Your playground, your rules!</p>
+        </div>
+        <div class="right">
+            <h1 class="title">What should I call you?</h1>
+            <input type="text" id="username" placeholder="Enter your name" />
+            <div class="checkbox-container">
+                <input type="checkbox" id="opinion" />
+                <label for="opinion">I'm excited to play!</label>
+            </div>
+            <button onclick="saveName()">Let's Go</button>
+        </div>
+    </div>
+
+    <script>
+        function saveName() {
+            const username = document.getElementById("username").value;
+            if (username.trim() === "") {
+                alert("Please enter your name!");
+                return;
+            }
+            localStorage.setItem("gameUser", username);
+            window.location.href = "game-home/style.html";
+        }
+    </script>
+</body>
+
+</html>

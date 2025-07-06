@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game Hub - Home</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <header>
+        <img src="images/logo.webp" alt="Logo" class="logo" />
+        <h2 id="usernameDisplay">Welcome, User</h2>
+        <button id="logoutBtn">Logout</button>
+    </header>
+
+    <section class="news-slider">
+        <div class="slides" id="slides">
+            <img src="images/news1.jpg" class="news-slide" />
+            <img src="images/news2.jpg" class="news-slide" />
+            <img src="images/news3.jpg" class="news-slide" />
+            <img src="images/news4.jpg" class="news-slide" />
+        </div>
+    </section>
+
+    <main class="game-section">
+        <div class="game-card" onclick="location.href='games/game1/index.html'">
+            <div class="game-bg" style="background-image: url('images/tic.jpg');"></div>
+            <span>Tic Tac Toe</span>
+        </div>
+
+        </div>
+        <div class="game-card" onclick="location.href='games/game2/index.html'">
+            <div class="game-bg" style="background-image: url('images/mind.jpg');"></div>
+            <span>Mind Game</span>
+        </div>
+        <div class="game-card" onclick="location.href='games/game3/index.html'">
+            <div class="game-bg" style="background-image: url('images/snake.jpg');"></div>
+            <span>Snake Game</span>
+        </div>
+    </main>
+    <main class="game-section">
+        <div class="game-card" onclick="location.href='games/game4/index.html'">
+            <div class="game-bg" style="background-image: url('images/candy.jpg');"></div>
+            <span>Candy Crunch</span>
+        </div>
+        <div class="game-card" onclick="location.href='games/game5/index.html'">
+            <div class="game-bg" style="background-image: url('images/draw.jpg');"></div>
+            <span>Draw Master</span>
+        </div>
+        <div class="game-card" onclick="location.href='games/game6/index.html'">
+            <div class="game-bg" style="background-image: url('images/word.jpg');"></div>
+            <span>Word Finder</span>
+        </div>
+    </main>
+    <main class="game-section">
+        <div class="game-card" onclick="location.href='games/game7/index.html'">
+            <div class="game-bg" style="background-image: url('images/slide.jpg');"></div>
+            <span>Smart Slides</span>
+        </div>
+        <div class="game-card" onclick="location.href='games/game8/index.html'">
+            <div class="game-bg" style="background-image: url('images/block.png');"></div>
+            <span>Memory Cards</span>
+        </div>
+        <div class="game-card" onclick="location.href='games/game9/index.html'">
+            <div class="game-bg" style="background-image: url('images/memory.png');"></div>
+            <span>Puzzle Master</span>
+        </div>
+    </main>
+    <main class="game-section2"></main>
+
+    <script src="style.js" defer></script>
+</body>
+
+</html>
